@@ -40,32 +40,32 @@ Toàn bộ dữ liệu được **ghi log bằng Python**, **cảnh báo qua Dis
 
 ```mermaid
 graph TB
-    subgraph "🌿 IoT Garden System"
-        subgraph "💻 Client Layer"
-            WEB[💻 Web Dashboard<br/>localhost:3000<br/>Real-time Monitoring]
-            APP[📱 Flutter App<br/>localhost:8080<br/>Device Control]
+    subgraph "IoT Garden System"
+        subgraph "Client Layer"
+            WEB[Web Dashboard<br/>localhost:3000<br/>Real-time Monitoring]
+            APP[Flutter App<br/>localhost:8080<br/>Device Control]
         end
         
-        subgraph "☁️ Communication Layer"
-            BROKER[🔌 MQTT Broker<br/>Mosquitto / EMQX<br/>192.168.1.7]
+        subgraph "Communication Layer"
+            BROKER[MQTT Broker<br/>Mosquitto / EMQX<br/>192.168.1.7]
             WS1[WebSocket :8083]
             TCP[TCP :1883]
         end
         
-        subgraph "🔧 Device Layer"
-            ESP[🤖 ESP32-S3<br/>DHT22 + Rain Sensor<br/>LED + Pump (L298N)]
+        subgraph "Device Layer"
+            ESP[ESP32-S3<br/>DHT22 and Rain Sensor<br/>LED and Pump via L298N]
         end
         
-        subgraph "🐍 Middleware Layer"
-            LOGGER[🗄️ mqtt_logger.py<br/>SQLite Data Logger]
-            ALERT[🚨 temperature_alert.py<br/>Discord Alert Bot]
+        subgraph "Middleware Layer"
+            LOGGER[mqtt_logger.py<br/>SQLite Data Logger]
+            ALERT[temperature_alert.py<br/>Discord Alert Bot]
         end
         
-        subgraph "📊 Data Topics"
-            SENSOR[📡 demo/garden/sensor/state<br/>Temperature, Humidity, Rain]
-            STATE[⚙️ demo/garden/device/state<br/>Light, Pump, Speed]
-            CMD[🎮 demo/garden/device/cmd<br/>Control Commands]
-            ONLINE[🟢 demo/garden/sys/online<br/>Device Status]
+        subgraph "Data Topics"
+            SENSOR[demo/garden/sensor/state<br/>Temperature, Humidity, Rain]
+            STATE[demo/garden/device/state<br/>Light, Pump, Speed]
+            CMD[demo/garden/device/cmd<br/>Control Commands]
+            ONLINE[demo/garden/sys/online<br/>Device Status]
         end
     end
 
@@ -343,7 +343,7 @@ mosquitto_pub -h 192.168.1.7 -t "demo/garden/device/cmd" -m '{"pump":"on"}'
 
 ## 🧑‍💻 **Thông tin dự án**
 
-- **Sinh viên:** Dương Tuấn Duy – 2224802010787  
+- **Sinh viên:** Nhóm 
 - **Trường:** Trường Đại học Thủ Dầu Một (TDMU)  
 - **Môn học:** Thực hành IoT & Ứng dụng  
 - **Đề tài:** Hệ thống vườn thông minh (Smart Garden IoT)  
@@ -354,9 +354,6 @@ mosquitto_pub -h 192.168.1.7 -t "demo/garden/device/cmd" -m '{"pump":"on"}'
 <div align="center">
 
 **🌿 Made with ❤️ for IoT Education at TDMU**
-
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![TDMU](https://img.shields.io/badge/Institution-TDMU-blue.svg)](https://tdmu.edu.vn/)
 
 </div>
 
