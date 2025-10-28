@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🌿 Smart Garden Dashboard</title>
+    <script src="https://unpkg.com/mqtt@2.18.8/dist/mqtt.min.js"></script>
+    <style>
+      /* ...existing styles... */
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap");
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+        color: #1a202c;
+        min-height: 100vh;
+        padding: 20px;
+      }
+      .container { max-width: 1200px; margin: 0 auto; background: rgba(255,255,255,0.96); border-radius:20px; padding:40px; box-shadow:0 10px 40px rgba(0,0,0,0.2); }
+      h1 { text-align:center; font-size:2.4em; margin-bottom:20px; background:linear-gradient(90deg,#16a34a,#3b82f6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+      .status-bar { display:flex; justify-content:center; gap:25px; flex-wrap:wrap; margin-bottom:40px; }
+      .status-item { padding:12px 24px; border-radius:30px; font-weight:600; color:white; }
+      .status-connected { background:#16a34a; } .status-disconnected { background:#dc2626; }
+      .status-online { background:#0284c7; } .status-offline { background:#6b7280; }
+      .dashboard { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:30px; }
+      .card { background:white; border-radius:16px; padding:25px; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+      .card h3 { font-size:1.4em; margin-bottom:16px; }
+      .metric { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; margin-bottom:12px; background:#f8fafc; border-radius:12px; border:1px solid #e5e7eb; }
+      .metric-label { font-weight:500; color:#475569; } .metric-value { font-weight:700; color:#1e293b; font-size:1.1em; }
+      .device-status { padding:6px 14px; border-radius:20px; font-size:0.85em; font-weight:600; }
+      .device-on { background:#16a34a; color:white; } .device-off { background:#6b7280; color:white; }
+      .control-btn { margin-left:10px; padding:6px 12px; border:none; border-radius:20px; background:linear-gradient(135deg,#2563eb,#7c3aed); color:white; font-weight:600; cursor:pointer; }
+      .timestamp { text-align:center; margin-top:30px; color:#64748b; font-size:0.9em; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🌿 Smart Garden Monitor</h1>
+      <div class="status-bar">
+        <div id="brokerStatus" class="status-item status-disconnected">🔌 Broker: Disconnected</div>
+        <div id="deviceStatus" class="status-item status-offline">📟 Device: Offline</div>
+      </div>
+
+      <div class="dashboard">
+        <div class="card">
+          <h3>🌡️ Sensor Data</h3>
+          <div class="metric"><span class="metric-label">Temperature</span><span id="temperature" class="metric-value">-- °C</span></div>
+          <div class="metric"><span class="metric-label">Humidity</span><span id="humidity" class="metric-value">-- %</span></div>
+          <div class="metric"><span class="metric-label">Rain</span><span id="rain" class="metric-value">--</span></div>
+        </div>
+
+        <div class="card">
+          <h3>💧 Device Control</h3>
+          <div class="metric">
+            <span class="metric-label">Pump</span>
+            <span id="pumpStatus" class="device-status device-off">OFF</span>
+            <button onclick="sendCommand('pump','toggle')" class="control-btn">Toggle</button>
+          </div>
+          <div class="metric">
+            <span class="metric-label">LED</span>
+            <span id="ledStatus" class="device-status device-off">OFF</span>
+            <button onclick="sendCommand('led','toggle')" class="control-btn">Toggle</button>
+          </div>
+          <div class="metric"><span class="metric-label">WiFi RSSI</span><span id="rssi" class="metric-value">-- dBm</span></div>
+        </div>
+
+        <div class="card">
+          <h3>⚙️ System Info</h3>
+          <div class="metric"><span class="metric-label">Firmware</span><span id="firmware" class="metric-value">--</span></div>
+          <div class="metric"><span class="metric-label">Online</span><span id="onlineStatus" class="device-status device-off">OFFLINE</span></div>
+          <div class="metric"><span class="metric-label">Last Update</span><span id="lastUpdate" class="metric-value">--</span></div>
+        </div>
+      </div>
+
+      <div class="timestamp">Real-time Monitoring via MQTT WebSocket</div>
+    </div>
+
+    <script>
+      // ...existing JS config...
+      const CONFIG = {
+        MQTT_HOST_WS: "ws://192.168.1.11:8083",
+        TOPIC_NS: "demo/garden",
+        USERNAME: "",
+        PASSWORD: "",
+        RECONNECT_MS: 5000,
+      };
+
+      const topics = {
+        sensor: `${CONFIG.TOPIC_NS}/sensor/state`,
+        device: `${CONFIG.TOPIC_NS}/device/state`,
+        online: `${CONFIG.TOPIC_NS}/sys/online`,
+        cmd: `${CONFIG.TOPIC_NS}/device/cmd`,
+      };
+
+      let client = null, reconnectTimer = null;
+
+      const el = {
+        brokerStatus: document.getElementById("brokerStatus"),
+        deviceStatus: document.getElementById("deviceStatus"),
+        temperature: document.getElementById("temperature"),
+        humidity: document.getElementById("humidity"),
+        rain: document.getElementById("rain"),
+        pumpStatus: document.getElementById("pumpStatus"),
+        ledStatus: document.getElementById("ledStatus"),
+        rssi: document.getElementById("rssi"),
+        firmware: document.getElementById("firmware"),
+        onlineStatus: document.getElementById("onlineStatus"),
+        lastUpdate: document.getElementById("lastUpdate"),
+      };
+
+      function updateBroker(ok) {
+        el.brokerStatus.textContent = ok ? "🔌 Broker: Connected" : "🔌 Broker: Disconnected";
+        el.brokerStatus.className = `status-item ${ok ? "status-connected" : "status-disconnected"}`;
+      }
+
+      function updateDeviceOnline(ok) {
+        el.deviceStatus.textContent = ok ? "📟 Device: Online" : "📟 Device: Offline";
+        el.deviceStatus.className = `status-item ${ok ? "status-online" : "status-offline"}`;
+        el.onlineStatus.textContent = ok ? "ONLINE" : "OFFLINE";
+        el.onlineStatus.className = `device-status ${ok ? "device-on" : "device-off"}`;
+      }
+
+      function updateControlUi(uiName, val) {
+        const element = el[uiName + "Status"];
+        if (!element) return;
+        // Accept boolean, "on"/"off", "true"/"false", 1/0
+        const on = (val === true || val === 1 || val === "1" || val === "on" || val === "ON" || val === "true");
+        element.textContent = on ? "ON" : "OFF";
+        element.className = `device-status ${on ? "device-on" : "device-off"}`;
+      }
+
+      function updateTime() {
+        el.lastUpdate.textContent = new Date().toLocaleTimeString();
+      }
+
+      function sendCommand(dev, act) {
+        if (!client || !client.connected) { alert("MQTT not connected!"); return; }
+        // Map UI 'led' → payload 'light' (firmware expects 'light')
+        let payloadKey = dev === "led" ? "light" : dev;
+        const topic = topics.cmd;
+        const msg = JSON.stringify({ [payloadKey]: act });
+        client.publish(topic, msg, {}, (err) => {
+          if (err) console.error("Publish error:", err);
+          else console.log(`🚀 Sent command ${msg} → ${topic}`);
+        });
+      }
+
+      // Robust sensor handler: accept multiple rain field names
+      function handleSensor(msg) {
+        try {
+          const d = JSON.parse(msg);
+
+          if (d.temperature !== undefined) el.temperature.textContent = `${Number(d.temperature).toFixed(1)} °C`;
+          if (d.humidity !== undefined) el.humidity.textContent = `${Number(d.humidity).toFixed(1)} %`;
+
+          // Rain info: prefer explicit boolean 'rain' or 'is_raining'
+          let isRaining = null;
+          if (d.rain !== undefined) {
+            // could be boolean or string 'wet'/'dry'
+            if (typeof d.rain === "boolean") isRaining = d.rain;
+            else if (typeof d.rain === "string") isRaining = (d.rain.toLowerCase() === "wet" || d.rain.toLowerCase() === "true");
+          } else if (d.is_raining !== undefined) {
+            isRaining = !!d.is_raining;
+          } else if (d.rain_digital !== undefined) {
+            // d.rain_digital: 0 = wet, 1 = dry
+            isRaining = (Number(d.rain_digital) === 0);
+          } else if (d.rain_analog !== undefined) {
+            // analog: 0 = wet, 4095 = dry (map threshold)
+            const a = Number(d.rain_analog);
+            const threshold = 2000;
+            isRaining = (a < threshold);
+          }
+
+          if (isRaining === true) el.rain.textContent = "🌧️ Wet";
+          else if (isRaining === false) el.rain.textContent = "☀️ Dry";
+          else el.rain.textContent = "--";
+
+          // show rssi if provided
+          if (d.rssi !== undefined) el.rssi.textContent = `${d.rssi} dBm`;
+
+          // if sensor payload includes firmware (some setups), update UI
+          if (d.fw !== undefined) el.firmware.textContent = d.fw;
+          else if (d.firmware !== undefined) el.firmware.textContent = d.firmware;
+
+          updateTime();
+        } catch (e) { console.error("Sensor parse error:", e); }
+      }
+
+      // Device state handler: accept fw / firmware and multiple keys for LED/rain etc.
+      function handleDevice(msg) {
+        try {
+          const d = JSON.parse(msg);
+
+          if (d.pump !== undefined) updateControlUi("pump", d.pump);
+          // Accept either 'light' or 'led' from device payload
+          if (d.light !== undefined) updateControlUi("led", d.light);
+          else if (d.led !== undefined) updateControlUi("led", d.led);
+
+          // rssi and firmware
+          if (d.rssi !== undefined) el.rssi.textContent = `${d.rssi} dBm`;
+          if (d.fw !== undefined) el.firmware.textContent = d.fw;
+          else if (d.firmware !== undefined) el.firmware.textContent = d.firmware;
+
+          updateTime();
+        } catch (e) { console.error("Device parse error:", e); }
+      }
+
+      // Online topic may carry { "online":true, "fw":"..." }
+      function handleOnline(msg) {
+        try {
+          const d = JSON.parse(msg);
+          updateDeviceOnline(d.online === true);
+          if (d.fw !== undefined) el.firmware.textContent = d.fw;
+          else if (d.firmware !== undefined) el.firmware.textContent = d.firmware;
+          updateTime();
+        } catch (e) { console.error("Online parse error:", e); }
+      }
+
+      function connectMQTT() {
+        updateBroker(false);
+        const id = "web_garden_" + Math.random().toString(16).substr(2, 6);
+        client = mqtt.connect(CONFIG.MQTT_HOST_WS, {
+          clientId: id,
+          username: CONFIG.USERNAME,
+          password: CONFIG.PASSWORD,
+          keepalive: 30,
+          reconnectPeriod: 0,
+        });
+
+        client.on("connect", () => {
+          console.log("✅ Connected to MQTT");
+          updateBroker(true);
+          client.subscribe(topics.sensor, { qos: 0 }, (e) => e && console.error(e));
+          client.subscribe(topics.device, { qos: 0 }, (e) => e && console.error(e));
+          client.subscribe(topics.online, { qos: 0 }, (e) => e && console.error(e));
+        });
+
+        client.on("message", (t, m) => {
+          const msg = m.toString();
+          if (t === topics.sensor) handleSensor(msg);
+          else if (t === topics.device) handleDevice(msg);
+          else if (t === topics.online) handleOnline(msg);
+        });
+
+        client.on("close", () => { updateBroker(false); updateDeviceOnline(false); scheduleReconnect(); });
+        client.on("error", () => { scheduleReconnect(); });
+      }
+
+      function scheduleReconnect() {
+        if (reconnectTimer) return;
+        reconnectTimer = setTimeout(() => { reconnectTimer = null; connectMQTT(); }, CONFIG.RECONNECT_MS);
+      }
+
+      window.addEventListener("load", connectMQTT);
+    </script>
+  </body>
+</html>
