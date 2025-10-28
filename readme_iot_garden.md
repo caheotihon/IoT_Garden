@@ -57,11 +57,12 @@ iot_garden/
 ```mermaid
 graph TB
   subgraph "🌿 IoT Garden System"
-    ESP[🤖 ESP32-S3<br/>Cảm biến DHT22 + Mưa]
-    MQTT[🔌 MQTT Broker<br/>Mosquitto / EMQX]
-    PY[🐍 Python Server<br/>Logger + Alert]
-    WEB[💻 Web Dashboard<br/>index.html]
-    APP[📱 Flutter App<br/>main_mqtt.dart]
+    ESP[🤖 ESP32-S3\nCảm biến DHT22 + Mưa]
+    MQTT[🔌 MQTT Broker\nMosquitto / EMQX]
+    PY[🐍 Python Server\nLogger + Alert]
+    WEB[💻 Web Dashboard\nindex.html]
+    APP[📱 Flutter App\nmain_mqtt.dart]
+    DIS[💬 Discord Webhook\nNhận cảnh báo]
   end
 
   ESP -->|Publish sensor/state| MQTT
@@ -72,7 +73,8 @@ graph TB
   MQTT --> APP
   WEB -->|Command device/cmd| MQTT
   APP -->|Command device/cmd| MQTT
-  PY -->|Alert Discord Webhook| Discord
+  PY -->|Alert Discord Webhook| DIS
+  
 ```
 
 ---
