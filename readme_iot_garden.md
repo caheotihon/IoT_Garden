@@ -72,7 +72,7 @@ graph TB
   MQTT --> APP
   WEB -->|Command device/cmd| MQTT
   APP -->|Command device/cmd| MQTT
-  PY -->|Alert Discord Webhook| ☁️Discord
+  PY -->|Alert Discord Webhook| Discord
 ```
 
 ---
