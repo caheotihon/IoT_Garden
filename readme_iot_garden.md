@@ -21,6 +21,54 @@ Toàn bộ dữ liệu được **ghi log bằng Python**, **cảnh báo qua Dis
 
 ---
 
+## 📋 **Features**
+
+### 🌐 **Web Dashboard (Real-time Monitoring)**
+- ✅ **Giao diện hiện đại** với thiết kế phẳng, tông màu tự nhiên (xanh lá – xanh dương)  
+- ✅ **Giám sát dữ liệu cảm biến thời gian thực** (🌡️ Nhiệt độ, 💧 Độ ẩm, ☁️ Trạng thái mưa)  
+- ✅ **Theo dõi trạng thái thiết bị** (LED, Bơm, mức tín hiệu WiFi, tình trạng Online/Offline)  
+- ✅ **Bảng điều khiển thiết bị trực quan** – bật/tắt LED và bơm tưới ngay trên giao diện  
+- ✅ **Kết nối MQTT WebSocket** với Broker nội bộ (Mosquitto/EMQX) đảm bảo cập nhật tức thì  
+
+---
+
+### 📱 **Flutter Mobile App (Device Control)**
+- ✅ **Thiết kế theo Material Design 3** – giao diện thân thiện, tối ưu cho di động  
+- ✅ **Điều khiển thiết bị** (💡 LED, 💦 Bơm tưới cây) bằng nút chuyển trạng thái (toggle switch)  
+- ✅ **Đồng bộ thời gian thực** với Web Dashboard qua MQTT  
+- ✅ **Hiển thị kết nối** (Broker status, thiết bị online/offline, cường độ tín hiệu)  
+- ✅ **Hỗ trợ đa nền tảng** (Android, iOS, Web – build từ Flutter Web)  
+
+---
+
+### 🤖 **ESP32-S3 Firmware**
+- ✅ **Chương trình điều khiển nhúng hoàn chỉnh** viết bằng C++ (Arduino Framework)  
+- ✅ **Tích hợp cảm biến DHT22** (đo nhiệt độ, độ ẩm) và **cảm biến mưa DO/AO**  
+- ✅ **Điều khiển thiết bị đầu ra:** LED báo sáng và máy bơm RS385 qua driver L298N  
+- ✅ **Kết nối WiFi + MQTT** ổn định, tự động reconnect khi mất kết nối  
+- ✅ **Gửi dữ liệu cảm biến 3s/lần**, **cập nhật trạng thái thiết bị 15s/lần**, **lắng nghe lệnh điều khiển tức thì**  
+
+---
+
+### 🐍 **Python Middleware & Logging**
+- ✅ **`mqtt_logger.py`**: Ghi toàn bộ dữ liệu cảm biến, trạng thái và lệnh điều khiển vào **SQLite Database**  
+- ✅ **`temperature_alert.py`**: Giám sát ngưỡng nhiệt độ > 30°C, **gửi cảnh báo lên Discord**  
+- ✅ **Tự động ghi thời gian thực** và hiển thị log cảm biến trong terminal  
+- ✅ **Có thể mở rộng thành API RESTful** để phục vụ dashboard hoặc báo cáo thống kê  
+
+---
+
+### 🔄 **MQTT Synchronization**
+- ✅ **Broker nội bộ (Mosquitto / EMQX)** hoạt động làm trung tâm truyền thông  
+- ✅ **Giao tiếp hai chiều Web ↔ App ↔ ESP32-S3** qua mô hình Publish / Subscribe  
+- ✅ **Trạng thái thiết bị luôn được giữ lại** nhờ retained message (`device/state`)  
+- ✅ **Cơ chế tự phục hồi kết nối** giúp hệ thống hoạt động ổn định 24/7  
+- ✅ **Phù hợp triển khai thực tế tại vườn, nhà kính, hoặc phòng thí nghiệm IoT**  
+
+---
+
+---
+
 ## ⚙️ **Thành phần hệ thống**
 
 | Thành phần | Mô tả | Công nghệ |
