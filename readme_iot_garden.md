@@ -21,54 +21,6 @@ Toàn bộ dữ liệu được **ghi log bằng Python**, **cảnh báo qua Dis
 
 ---
 
-## 📋 **Features**
-
-### 🌐 **Web Dashboard (Real-time Monitoring)**
-- ✅ **Giao diện hiện đại** với thiết kế phẳng, tông màu tự nhiên (xanh lá – xanh dương)  
-- ✅ **Giám sát dữ liệu cảm biến thời gian thực** (🌡️ Nhiệt độ, 💧 Độ ẩm, ☁️ Trạng thái mưa)  
-- ✅ **Theo dõi trạng thái thiết bị** (LED, Bơm, mức tín hiệu WiFi, tình trạng Online/Offline)  
-- ✅ **Bảng điều khiển thiết bị trực quan** – bật/tắt LED và bơm tưới ngay trên giao diện  
-- ✅ **Kết nối MQTT WebSocket** với Broker nội bộ (Mosquitto/EMQX) đảm bảo cập nhật tức thì  
-
----
-
-### 📱 **Flutter Mobile App (Device Control)**
-- ✅ **Thiết kế theo Material Design 3** – giao diện thân thiện, tối ưu cho di động  
-- ✅ **Điều khiển thiết bị** (💡 LED, 💦 Bơm tưới cây) bằng nút chuyển trạng thái (toggle switch)  
-- ✅ **Đồng bộ thời gian thực** với Web Dashboard qua MQTT  
-- ✅ **Hiển thị kết nối** (Broker status, thiết bị online/offline, cường độ tín hiệu)  
-- ✅ **Hỗ trợ đa nền tảng** (Android, iOS, Web – build từ Flutter Web)  
-
----
-
-### 🤖 **ESP32-S3 Firmware**
-- ✅ **Chương trình điều khiển nhúng hoàn chỉnh** viết bằng C++ (Arduino Framework)  
-- ✅ **Tích hợp cảm biến DHT22** (đo nhiệt độ, độ ẩm) và **cảm biến mưa DO/AO**  
-- ✅ **Điều khiển thiết bị đầu ra:** LED báo sáng và máy bơm RS385 qua driver L298N  
-- ✅ **Kết nối WiFi + MQTT** ổn định, tự động reconnect khi mất kết nối  
-- ✅ **Gửi dữ liệu cảm biến 3s/lần**, **cập nhật trạng thái thiết bị 15s/lần**, **lắng nghe lệnh điều khiển tức thì**  
-
----
-
-### 🐍 **Python Middleware & Logging**
-- ✅ **`mqtt_logger.py`**: Ghi toàn bộ dữ liệu cảm biến, trạng thái và lệnh điều khiển vào **SQLite Database**  
-- ✅ **`temperature_alert.py`**: Giám sát ngưỡng nhiệt độ > 30°C, **gửi cảnh báo lên Discord**  
-- ✅ **Tự động ghi thời gian thực** và hiển thị log cảm biến trong terminal  
-- ✅ **Có thể mở rộng thành API RESTful** để phục vụ dashboard hoặc báo cáo thống kê  
-
----
-
-### 🔄 **MQTT Synchronization**
-- ✅ **Broker nội bộ (Mosquitto / EMQX)** hoạt động làm trung tâm truyền thông  
-- ✅ **Giao tiếp hai chiều Web ↔ App ↔ ESP32-S3** qua mô hình Publish / Subscribe  
-- ✅ **Trạng thái thiết bị luôn được giữ lại** nhờ retained message (`device/state`)  
-- ✅ **Cơ chế tự phục hồi kết nối** giúp hệ thống hoạt động ổn định 24/7  
-- ✅ **Phù hợp triển khai thực tế tại vườn, nhà kính, hoặc phòng thí nghiệm IoT**  
-
----
-
----
-
 ## ⚙️ **Thành phần hệ thống**
 
 | Thành phần | Mô tả | Công nghệ |
@@ -82,20 +34,141 @@ Toàn bộ dữ liệu được **ghi log bằng Python**, **cảnh báo qua Dis
 
 ---
 
+## 🎯 **System Architecture**
+
+### 🏗️ **Overall System Diagram**
+
+```mermaid
+graph TB
+    subgraph "🌿 IoT Garden System"
+        subgraph "💻 Client Layer"
+            WEB[💻 Web Dashboard<br/>localhost:3000<br/>Real-time Monitoring]
+            APP[📱 Flutter App<br/>localhost:8080<br/>Device Control]
+        end
+        
+        subgraph "☁️ Communication Layer"
+            BROKER[🔌 MQTT Broker<br/>Mosquitto / EMQX<br/>192.168.1.7]
+            WS1[WebSocket :8083]
+            TCP[TCP :1883]
+        end
+        
+        subgraph "🔧 Device Layer"
+            ESP[🤖 ESP32-S3<br/>DHT22 + Rain Sensor<br/>LED + Pump (L298N)]
+        end
+        
+        subgraph "🐍 Middleware Layer"
+            LOGGER[🗄️ mqtt_logger.py<br/>SQLite Data Logger]
+            ALERT[🚨 temperature_alert.py<br/>Discord Alert Bot]
+        end
+        
+        subgraph "📊 Data Topics"
+            SENSOR[📡 demo/garden/sensor/state<br/>Temperature, Humidity, Rain]
+            STATE[⚙️ demo/garden/device/state<br/>Light, Pump, Speed]
+            CMD[🎮 demo/garden/device/cmd<br/>Control Commands]
+            ONLINE[🟢 demo/garden/sys/online<br/>Device Status]
+        end
+    end
+
+    WEB -.->|WebSocket| WS1
+    APP -.->|WebSocket| WS1
+    WS1 --> BROKER
+    ESP -->|MQTT TCP| TCP
+    TCP --> BROKER
+
+    BROKER -->|Publish| SENSOR
+    BROKER -->|Publish| STATE
+    BROKER -->|Publish| ONLINE
+    BROKER <-->|Subscribe/Publish| CMD
+
+    BROKER --> LOGGER
+    BROKER --> ALERT
+
+    style WEB fill:#16a34a,color:#fff
+    style APP fill:#3b82f6,color:#fff
+    style BROKER fill:#facc15,color:#000
+    style ESP fill:#ef4444,color:#fff
+    style LOGGER fill:#a855f7,color:#fff
+    style ALERT fill:#f97316,color:#fff
+    style SENSOR fill:#10b981,color:#fff
+    style STATE fill:#8b5cf6,color:#fff
+    style CMD fill:#fcd34d,color:#000
+    style ONLINE fill:#22d3ee,color:#000
+```
+
+### � **Data Flow Architecture**
+
+```mermaid
+sequenceDiagram
+    participant 💻 Web as Web Dashboard
+    participant 📱 App as Flutter App
+    participant 🐍 Logger as Python Server
+    participant ☁️ Broker as MQTT Broker (Mosquitto / EMQX)
+    participant 🤖 ESP32 as ESP32-S3 Device
+
+    Note over 💻 Web,🤖 ESP32: 🌿 System Initialization
+    🤖 ESP32->>☁️ Broker: Connect to WiFi & Publish Online Status
+    💻 Web->>☁️ Broker: Subscribe to demo/garden/*
+    📱 App->>☁️ Broker: Subscribe to demo/garden/*
+    🐍 Logger->>☁️ Broker: Subscribe to all topics for logging
+
+    Note over 💻 Web,🤖 ESP32: 🌡️ Real-time Data Streaming
+    🤖 ESP32->>☁️ Broker: Publish Sensor Data (Every 3s)
+    ☁️ Broker->>💻 Web: Update Dashboard (Temperature, Humidity, Rain)
+    ☁️ Broker->>📱 App: Update Device Status
+    ☁️ Broker->>🐍 Logger: Store Data in SQLite
+
+    Note over 💻 Web,🤖 ESP32: 🚨 Temperature Alert Process
+    🐍 Logger->>🐍 Logger: Detect Temperature > 30°C
+    🐍 Logger-->>📢 Discord: Send Alert Message (High Temp)
+
+    Note over 💻 Web,🤖 ESP32: 💡 Device Control Flow
+    📱 App->>☁️ Broker: Publish Command {"pump":"on"}
+    ☁️ Broker->>🤖 ESP32: Deliver Control Command
+    🤖 ESP32->>🤖 ESP32: Activate Pump (via L298N)
+    🤖 ESP32->>☁️ Broker: Publish Updated State {"pump":"on"}
+    ☁️ Broker->>💻 Web: Sync Device State
+    ☁️ Broker->>📱 App: Confirm Action
+    ☁️ Broker->>🐍 Logger: Record Command & Result
+```
+
 ## 🔗 **Cấu trúc thư mục**
 
 ```
-iot_garden/
-├── web_dashboard/          # Giao diện giám sát (index.html)
-├── app_flutter/            # Ứng dụng Flutter điều khiển
-├── firmware_esp32s3/       # Code nhúng (main.cpp)
-├── python_server/
-│   ├── mqtt_logger.py      # Ghi dữ liệu cảm biến vào SQLite
-│   ├── temperature_alert.py# Cảnh báo nhiệt độ cao qua Discord
-│   └── iot_garden_data.db  # CSDL lưu log cảm biến
-├── infra/
-│   └── mosquitto.conf      # Cấu hình MQTT broker nội bộ
-└── README.md
+📦 iot_garden_project/
+│
+├── 🌐 web/                          # Web Dashboard
+│   ├── src/
+│   │   └── index.html              # Giao diện giám sát MQTT (WebSocket)
+│   └── README.md
+│
+├── 📱 app_flutter/                  # Flutter Mobile App (Controller)
+│   ├── lib/
+│   │   ├── main.dart               # Flutter entry point
+│   │   ├── main_mqtt.dart          # MQTT client app (TCP)
+│   │   ├── main_mqtt_web.dart      # MQTT client app (WebSocket)
+│   │   └── main_simple.dart        # Phiên bản rút gọn (demo)
+│   └── README.md
+│
+├── 🤖 firmware_esp32s3/             # ESP32-S3 Firmware (C++)
+│   ├── src/
+│   │   └── main.cpp                # Chương trình chính cho ESP32-S3
+│   └── README.md
+│
+├── 🐍 alerts/                       # Python Alert Services
+│   ├── temperature_alert.py        # Cảnh báo nhiệt độ qua Discord
+│   └── README.md
+│
+├── 🐍 database/                     # Python Data Logging
+│   ├── mqtt_logger.py              # Ghi dữ liệu MQTT vào SQLite
+│   ├── view_database.py            # Truy vấn dữ liệu cảm biến
+│   ├── iot_garden_data.db          # CSDL chính của hệ thống
+│   └── README.md
+│
+├── 🔧 infra/                        # Hạ tầng MQTT Broker
+│   ├── README.md
+│   └── mosquitto.conf              # Cấu hình Mosquitto local broker
+│
+└── readme_iot_garden.md            # README chính của đồ án
 ```
 
 ---
@@ -185,7 +258,7 @@ graph TB
 ```
 demo/garden/
 ├── sensor/state     → {"temperature":31.5,"humidity":80,"is_raining":false}
-├── device/state     → {"light":"on","pump":"off","pumpSpeed":80}
+├── device/state     → {"light":"toggle","pump":"off","pumpSpeed":80}
 ├── device/cmd       → {"pump":"on"} hoặc {"light":"toggle"}
 └── sys/online       → {"online":true,"deviceId":"esp32s3_garden"}
 ```
