@@ -389,6 +389,29 @@ mosquitto_pub -h 192.168.1.7 -t "demo/garden/device/cmd" -m '{"pump":"on"}'
 
 ---
 
+## 🖼️ **Hình ảnh & Demo (Screenshots)**
+
+### 🌐 **Web Dashboard**
+> Giao diện giám sát cảm biến và điều khiển thiết bị theo thời gian thực qua MQTT WebSocket.
+
+![Web Dashboard](images/web_dashboard.png)
+
+---
+
+### 📱 **Flutter Mobile App**
+> Giao diện ứng dụng Flutter hiển thị trạng thái LED và máy bơm, đồng bộ tức thì với Web Dashboard.
+
+![Flutter App](images/flutter_screen.png)
+
+---
+
+### 🤖 **Cảnh báo Discord**
+> Python script `temperature_alert.py` gửi thông báo tự động khi nhiệt độ vượt ngưỡng an toàn.
+
+![Discord Alert](images/discord_alert.png)
+
+---
+
 ## 🧑‍💻 **Thông tin dự án**
 
 - **Sinh viên:** Nhóm 

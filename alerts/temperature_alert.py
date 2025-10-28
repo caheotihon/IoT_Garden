@@ -15,7 +15,7 @@ import requests
 # =============================================================================
 
 # MQTT Configuration
-MQTT_BROKER = "192.168.1.11" 
+MQTT_BROKER = "192.168.1.9" 
 MQTT_PORT = 1883
 MQTT_USERNAME = ""
 MQTT_PASSWORD = ""

@@ -519,7 +519,7 @@ class MqttController extends ChangeNotifier {
   // Configuration - Using local Mosquitto broker (match ESP32 and Web)
   // For Android Emulator: use 10.0.2.2 (host machine)
   // For Physical Device on TDMU: use 10.15.156.246 (your computer's IP)
-  static const String mqttHost = '192.168.1.7'; // Android emulator host alias
+  static const String mqttHost = '192.168.1.9'; // Android emulator host alias
   static const int mqttPort = 1883;
   static const String mqttUsername = ''; // No auth needed
   static const String mqttPassword = '';
