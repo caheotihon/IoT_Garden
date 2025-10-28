@@ -16,7 +16,7 @@
 
 ## 📋 **Tổng quan hệ thống**
 
-Dự án **IoT Garden** giúp người dùng **giám sát nhiệt độ, độ ẩm, và lượng mưa**, đồng thời **điều khiển máy bơm và đèn chiếu sáng** từ xa thông qua **MQTT**.  
+Dự án **IoT Garden** giúp người dùng **giám sát nhiệt độ, độ ẩm, và lượng mưa**, đồng thời **điều khiển máy bơm và đèn chiếu sáng** từ xa thông qua **App**.  
 Toàn bộ dữ liệu được **ghi log bằng Python**, **cảnh báo qua Discord**, và **hiển thị thời gian thực** trên **Web Dashboard và App Flutter**.
 
 ---
