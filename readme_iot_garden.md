@@ -264,6 +264,54 @@ demo/garden/
 ```
 
 ---
+## 🔧 **Hardware Setup**
+
+### 🛠️ **ESP32-S3 Development Board Setup**
+
+#### **Required Components**
+- **ESP32-S3 Development Board** (38-pin hoặc tương tự)
+- **DHT22** - Nhiệt độ & độ ẩm
+- **Rain Sensor Module** - Phát hiện trời mưa (Digital & Analog output)
+- **L298N Motor Driver** - Điều khiển bơm RS385 DC 6–12 V
+- **LEMini Water Pump (RS385)** - Bơm nước tưới cây
+- **LED + 220 Ω Resistor** - Đèn trạng thái
+- **Breadboard & Jumper Wires** - Dây nối, mạch thử
+- **Adapter 9–12 V** – Nguồn cấp chính cho bơm
+
+#### **Wiring Diagram**
+```
+ESP32-S3 Connections:
+├── 🌡️ DHT22 (Temperature & Humidity Sensor)
+│   ├── VCC  → 3.3V
+│   ├── GND  → GND
+│   └── DATA → GPIO 4
+│
+├── ☔ Rain Sensor Module
+│   ├── VCC  → 3.3V or 5V
+│   ├── GND  → GND
+│   ├── DO   → GPIO 15   (Digital output – 0 = mưa, 1 = khô)
+│   └── AO   → GPIO 16   (Analog output – giá trị 0–4095)
+│
+├── 💡 LED Indicator
+│   ├── Anode   → GPIO 10
+│   └── Cathode → GND qua điện trở 220 Ω
+│
+├── 💦 L298N Motor Driver (Pump Control)
+│   ├── IN1 → GPIO 5      (Điều khiển chiều quay)
+│   ├── IN2 → GPIO 6      (Điều khiển chiều ngược)
+│   ├── ENA → GPIO 9      (PWM – điều chỉnh tốc độ bơm)
+│   ├── +5V (logic) → 5V từ ESP32-S3
+│   ├── GND (logic) → GND chung với ESP32-S3
+│   ├── +12V (motor) → Adapter 9–12 V (nguồn bơm)
+│   ├── GND (motor) → GND nguồn bơm (chung GND ESP32)
+│   └── OUT1/OUT2 → Hai dây bơm RS385
+│
+└── ⚡ Power & Communication
+    ├── USB-C → Nạp chương trình & cấp 5 V
+    └── Wi-Fi 2.4 GHz → Giao tiếp MQTT
+```
+
+---
 
 ## ⚙️ **Cấu hình và chạy thử**
 
